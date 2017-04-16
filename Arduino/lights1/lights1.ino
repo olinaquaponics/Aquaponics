@@ -1,7 +1,8 @@
 //Control System for Olin Aquaponics Teensy
 
 #include <Wire.h>
-#include "RTClib.h"
+#include <RTClib.h>
+
 
 RTC_DS1307 rtc;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
@@ -18,6 +19,15 @@ int currGrowStatus[pinsGrowNum] = {};
 const float timeGrow[pinsGrowNum][maxGrowTimeBlocks][2]={
   {{0,0},{6,1},{19.4,0},{24,1}}
 };
+
+const int pumpNum = 3;                  // Number of pumps
+int currPumpOn = 0;
+const int pinsPump[pumpNum] = {1,2,3};  // Teensy pins
+
+TimeSpan pumpDuration = TimeSpan(0, 0, 15, 0); // Time on
+TimeSpan pumpBreakDuration = TimeSpan(0, 0, 5, 0);           // Seconds off
+bool pumpOn = 0;
+DateTime lastTimePump = 0;
 
 
 float currHour = 0;
@@ -43,11 +53,13 @@ void printTime(){
 }
 
 void setupTime(){
+  Serial.println("Setup Time");
+  
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
     while (1);
   }
-
+  
   if (! rtc.isrunning()) {
     Serial.println("RTC is NOT running!");
     // following line sets the RTC to the date & time this sketch was compiled
@@ -67,7 +79,7 @@ void setupTime(){
 
 
 int updateGrowStatus(){
-  
+
   // returns current status of grow leds
 
   DateTime now = rtc.now();
@@ -79,13 +91,13 @@ int updateGrowStatus(){
   currHour = now.hour() + (now.minute()/60.);
   Serial.print("currHour: ");
   Serial.println(currHour);
-  
+
   for(int pin = 0; pin < pinsGrowNum; pin++){
-    
+
     // find the current time block by checking if the next time block is later than now
     int currTimeBlock = 0;
-    while(timeGrow[pin][currTimeBlock + 1][0] < currHour){ 
-      currTimeBlock++; 
+    while(timeGrow[pin][currTimeBlock + 1][0] < currHour){
+      currTimeBlock++;
       if(currTimeBlock > maxGrowTimeBlocks) {
         Serial.print("ERROR: Pin ");
         Serial.print(pin);
@@ -98,11 +110,11 @@ int updateGrowStatus(){
     Serial.print(timeGrow[pin][currTimeBlock][0]);
     Serial.print("\ttime of next block: ");
     Serial.println(timeGrow[pin][currTimeBlock + 1][0]);
-    
+
     currGrowStatus[pin] = timeGrow[pin][currTimeBlock][1];
 
     Serial.print("Pin: ");
-    Serial.print(pin);    
+    Serial.print(pin);
     Serial.print("\tTime Block: ");
     Serial.print(currTimeBlock);
     Serial.print("\tStatus: ");
@@ -124,6 +136,46 @@ void setupPins(){
   for(int i = 0; i < pinsGrowNum; i++){
     pinMode(pinsGrow[i], OUTPUT);
   }
+  for(int i = 0; i < pumpNum; i++){
+    pinMode(pinsPump[i], OUTPUT);
+  }
+}
+
+
+void updatePumps(){
+  DateTime now = rtc.now();
+  // If pump is on
+  if(pumpOn){
+    if(now.unixtime() > (lastTimePump + pumpDuration).unixtime()){
+      // Set lastTimePump to now, turn off pump
+       lastTimePump = now;
+       digitalWrite(pinsPump[currPumpOn], LOW);
+       Serial.print("Turning off pump #");
+       Serial.println(currPumpOn);
+       pumpOn = 0;
+    }
+  }
+
+  // If currently on break
+  else{
+    if(now.unixtime() > (lastTimePump + pumpBreakDuration).unixtime()){
+      // Set lastTimePump to now, increment currPumpOn, turn on pump
+      lastTimePump = now;
+
+      currPumpOn ++;
+      if(currPumpOn >= pumpNum){ currPumpOn = 0; }
+
+      digitalWrite(pinsPump[currPumpOn], HIGH);
+      Serial.print("Turning on pump #");
+      Serial.println(currPumpOn);
+      pumpOn = 1;
+    }
+  }
+
+  Serial.print("Pump ");
+  Serial.print(currPumpOn);
+  Serial.print(" is ");
+  Serial.println(pumpOn);
 }
 
 
@@ -133,6 +185,7 @@ void setup() {
   #endif
 
   Serial.begin(57600);
+  Serial.println("Hi, I'm alive.");
 
   setupTime();
   setupPins();
@@ -141,6 +194,7 @@ void setup() {
 void loop() {
   updateGrowStatus();
   updateGrowLights();
-  
+  updatePumps();
+
   delay(3000);
 }
