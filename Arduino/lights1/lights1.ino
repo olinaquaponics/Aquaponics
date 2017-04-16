@@ -11,7 +11,7 @@ const int pinsGrowNum = 1;
 const int maxGrowTimeBlocks = 5;
 
 // pin number of each grow light
-const int pinsGrow[pinsGrowNum]= {13};
+const int pinsGrow[pinsGrowNum] = {13};
 int currGrowStatus[pinsGrowNum] = {};
 
 // time blocks for grow lights. 1 row per grow light: {time start (H), status (1,0)}
@@ -57,9 +57,6 @@ void setupTime(){
     Serial.print(__DATE__);
     Serial.print(" ");
     Serial.println(__TIME__);
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   }
   else {
     Serial.println("Initializing time...");
@@ -131,7 +128,6 @@ void setupPins(){
 
 
 void setup() {
-
   #ifndef ESP8266
     while (!Serial); // for Leonardo/Micro/Zero
   #endif
