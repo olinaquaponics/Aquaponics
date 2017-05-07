@@ -19,22 +19,21 @@ int currGrowStatus[pinsGrowNum] = {};
 
 // time blocks for grow lights. 1 row per grow light: {time start (H), status (1,0)}
 const float timeGrow[pinsGrowNum][maxGrowTimeBlocks][2]={
-  {{0,0},{6,1},{19.4,0},{24,1}},
-  {{0,0},{6,1},{19.4,0},{24,1}},
-  {{0,0},{6,1},{19.4,0},{24,1}},
-  {{0,0},{6,1},{19.4,0},{24,1}},
-  {{0,0},{6,1},{19.4,0},{24,1}}
+  {0,0},{6,1},{19.4,0},{24,1}
 };
 
 const int pumpNum = 4;                  // Number of pumps
 int currPumpOn = 0;
 const int pinsPump[4] = {16,15,14,7};  // Teensy pins
 
+
+// Pump Duration
 int pumpDuration = 10;         // Time on in seconds
 int pumpBreakDuration = 1;     // Time off in seconds
 
 //int pumpDuration = 15 * 60;
 //int pumpBreakDuration = 15;
+
 
 bool pumpOn = 0;
 long int lastTimePump = 0;
@@ -203,6 +202,9 @@ void setup() {
 
 //  setupTime();
   setupPins();
+
+  // Turn on lights
+  digitalWrite(pinsPump[3], HIGH);
 }
 
 void loop() {
